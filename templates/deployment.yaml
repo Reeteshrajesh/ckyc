@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ckyc.fullname" . }}
+  labels:
+    {{- include "ckyc.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ckyc.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+      labels:
+        {{- include "ckyc.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "ckyc.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"(dekh lenge kaha se image le rahe hai)
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: http
+          env:
+            - name: "FI_CODE"
+              valueFrom:
+                secretKeyRef:
+                  key: fiCode
+                  name: {{ .Release.Name }}-env
+            - name: "KEY_ALIAS"
+              valueFrom:
+                secretKeyRef:
+                  key: keyAlias
+                  name: {{ .Release.Name }}-env
+            - name: "KEYSTORE_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  key: keystorePassword
+                  name: {{ .Release.Name }}-env
+            # - name: "CKYC_CLIENT_BASE_URL"
+            #   value: "https://{{ include "ckyc.fullname" . }}.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.service.port }}"
+          volumeMounts:
+            - name: ckyc-props
+              mountPath: /app/ckyc-properties.yml
+              subPath: ckyc-properties.yml
+            - name: ckyc-keys
+              mountPath: /app/ckyc-keys
+              readOnly: true
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: ckyc-props
+          configMap:
+            name: {{ include "ckyc.fullname" . }}-config
+        - name: ckyc-keys
+          secret:
+            secretName: {{ include "ckyc.fullname" . }}-secret
+            optional: false
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

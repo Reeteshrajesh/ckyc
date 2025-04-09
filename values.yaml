@@ -1,0 +1,76 @@
+replicaCount: 1
+
+image:
+  repository: digiotech/digio-ckyc
+  pullPolicy: IfNotPresent
+  tag: digio_ckyc_v0
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 1423
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+resources: {}
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector:
+  environment: ckyc
+  resource_type: ckyc_util
+
+tolerations:
+  - key: resource_type
+    value: ckyc_util
+    effect: NoExecute
+  - key: resource_type
+    value: ckyc_util
+    effect: NoSchedule
+
+affinity: {}
+
+digioCkyc:
+  fiCode: 'your_ficode'
+  keyAlias: 'your_keyalias'
+  keystorePassword: 'your_password'
+
+namespace: default
