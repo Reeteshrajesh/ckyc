@@ -1,0 +1,10 @@
+ckyc-config:
+  fi-code: IN7708
+  ckyc-public-key: "/app/ckyc-keys/CersaiSignPublicKey.cer"
+  digio-env: PROD
+  keystore:
+    keystore-configuration:
+      key-alias: aniket
+      keystore-password: aniket@123
+      keystore-path: "/app/ckyc-keys/keystore.jks"
+      signature-method: http://www.w3.org/2000/09/xmldsig#rsa-sha1

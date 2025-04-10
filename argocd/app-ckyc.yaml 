@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ckyc-integration
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'git url'
+    targetRevision: HEAD
+    path: charts/ckyc(location jo bhi ho menifest file ka)
+    helm:
+      valueFiles:
+        - ../../values.yaml(location of value file)
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: ckyc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
