@@ -69,8 +69,8 @@ tolerations:
 affinity: {}
 
 digioCkyc:
-  fiCode: 'your_ficode'
-  keyAlias: 'your_keyalias'
-  keystorePassword: 'your_password'
+  fiCode: "your_ficode"
+  keyAlias: "your_keyalias"
+  keystorePassword: "your_password"
 
 namespace: default
