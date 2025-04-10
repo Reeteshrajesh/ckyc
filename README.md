@@ -79,3 +79,13 @@ kubectl apply -f argocd/app-ckyc.yaml
 ```
 
 ArgoCD will automatically sync the Helm chart and deploy your CKYC service.
+
+
+
+
+
+kubectl create namespace argocd\nkubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+  179  kubectl get pods -n argocd
+  180  kubectl get svc -n argocd
+  181  kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0 &
+  182  kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
