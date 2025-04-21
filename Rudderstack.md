@@ -1,4 +1,3 @@
-```markdown
 # 📦 RudderStack Deployment & Operations Guide
 
 This repository contains deployment configurations, setup instructions, and best practices for managing RudderStack (open-source or cloud version) in a DevOps environment.
