@@ -213,6 +213,8 @@ helm install my-app ./csi-secrets-app \
 
 > You can swap `--set secretName=` with `--set secretArn=` if you’re using ARNs instead of names.
 
+*** my-app vale part ko hum dynamically har microservice ke liye use karenge.. ***
+
 ---
 
 ### Verify the Deployment
