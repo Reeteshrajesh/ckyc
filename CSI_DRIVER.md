@@ -1,7 +1,9 @@
 # AWS Secrets CSI Helm Test Setup
 
-This guide helps you verify AWS Secrets Store CSI driver integration in multiple Kubernetes namespaces (`dev`, `qa`, `stage`, `prod`) using a simple Helm chart.
+This setup allows Kubernetes pods to securely access secrets and parameters stored in:
 
+- **AWS Secrets Manager** – for credentials, API keys, etc.
+- **AWS Systems Manager Parameter Store** – for config values
 ---
 
 ## ✅ What’s Included
@@ -19,7 +21,7 @@ This guide helps you verify AWS Secrets Store CSI driver integration in multiple
 ### 1. Chart Directory Structure
 
 ```
-csi-secrets-test/
+csi-secrets-app/
 ├── Chart.yaml
 ├── values.yaml
 └── templates/
@@ -46,6 +48,7 @@ version: 0.1.0
 ```yaml
 namespace: dev
 secretName: my-app-secret
+secretArn: ""  # Optional: use ARN instead of name
 
 serviceAccount:
   name: csi-secrets-sa
@@ -56,10 +59,11 @@ secretProviderClass:
   name: aws-secrets
   provider: aws
 
-pod:
-  name: csi-test-pod
-  image: busybox
-  command: ["sleep", "3600"]
+secrets:
+  enabled: true
+  mountPath: /mnt/secrets-store
+  secretProviderClass: aws-secrets
+
 ```
 
 #### `templates/serviceaccount.yaml`
@@ -93,36 +97,113 @@ spec:
 #### `templates/pod.yaml`
 
 ```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: {{ .Values.pod.name }}
-  namespace: {{ .Values.namespace }}
-spec:
-  serviceAccountName: {{ .Values.serviceAccount.name }}
-  containers:
-  - name: test
-    image: {{ .Values.pod.image }}
-    command: {{ .Values.pod.command }}
-    volumeMounts:
-    - name: secrets-store
-      mountPath: "/mnt/secrets-store"
-      readOnly: true
-  volumes:
-  - name: secrets-store
-    csi:
-      driver: secrets-store.csi.k8s.io
-      readOnly: true
-      volumeAttributes:
-        secretProviderClass: {{ .Values.secretProviderClass.name }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+```
+
+➡️ After that line, insert the `volumeMounts`:
+
+```yaml
+          volumeMounts:
+            - name: secrets-store
+              mountPath: {{ .Values.secrets.mountPath }}
+              readOnly: true
+```
+
+Then below your existing:
+
+```yaml
+      {{- with .Values.tolerations }}
+```
+
+➡️ Add the `volumes` section:
+
+```yaml
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.secrets.secretProviderClass }}
 ```
 
 ---
 
-## 🧪 Deploying Per Namespace
+### ✅ Deployment Snippet (Final Additions)
+
+```yaml
+          volumeMounts:
+            - name: secrets-store
+              mountPath: {{ .Values.secrets.mountPath }}
+              readOnly: true
+...
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.secrets.secretProviderClass }}
+```
+
+---
+
+### Install the Secrets Store CSI Driver (if not already)
 
 ```bash
-helm install test-secrets ./csi-secrets-test \
+helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
+
+helm install -n kube-system csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver
+```
+
+
+---
+
+### 🔧 Install the AWS Provider for the CSI Driver
+
+```bash
+helm repo add aws-secrets-manager https://aws.github.io/secrets-store-csi-driver-provider-aws
+
+helm install -n kube-system secrets-provider-aws aws-secrets-manager/secrets-store-csi-driver-provider-aws
+```
+
+---
+
+### 🛡️ Ensure IAM Role Exists (IRSA) (we already have)
+
+Your `ServiceAccount` needs to be annotated with an IAM role that has permission to access AWS Secrets Manager.  
+Here’s the IAM policy example:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": "arn:aws:secretsmanager:<region>:<account-id>:secret:<secret-name>*"
+    }
+  ]
+}
+```
+
+---
+
+### 📦 Package & Install Your Helm Chart
+
+```bash
+**for excisting namespace**
+helm install my-app ./csi-secrets-app \
+  --namespace dev \
+  --set namespace=dev \
+  --set secretName=my-app-secret \
+  --set serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=arn:aws:iam::<account-id>:role/csi-secrets-role-dev
+
+----
+helm install my-app ./csi-secrets-app \
   --namespace dev \
   --create-namespace \
   --set namespace=dev \
@@ -130,37 +211,24 @@ helm install test-secrets ./csi-secrets-test \
   --set serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=arn:aws:iam::<account-id>:role/csi-secrets-role-dev
 ```
 
-Repeat for other namespaces:
+> You can swap `--set secretName=` with `--set secretArn=` if you’re using ARNs instead of names.
+
+---
+
+### Verify the Deployment
 
 ```bash
-helm install test-secrets-qa ./csi-secrets-test \
-  --namespace qa \
-  --create-namespace \
-  --set namespace=qa \
-  --set secretName=my-app-secret \
-  --set serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=arn:aws:iam::<account-id>:role/csi-secrets-role-qa
+kubectl get pods -n dev
+
+kubectl exec -n dev -it <your-pod-name> -- ls /mnt/secrets-store
+
+kubectl exec -n dev -it <your-pod-name> -- cat /mnt/secrets-store/<your-secret-key>
 ```
 
 ---
 
-## ✅ Verifying Secret Mount
+### 🧼 Step 6: Cleanup (Optional)
 
 ```bash
-kubectl exec -n dev -it csi-test-pod -- ls /mnt/secrets-store
-kubectl exec -n dev -it csi-test-pod -- cat /mnt/secrets-store/my-app-secret
+helm uninstall my-app --namespace dev
 ```
-
----
-
-## 🧹 Cleanup
-
-```bash
-helm uninstall test-secrets -n dev
-helm uninstall test-secrets-qa -n qa
-```
-
----
-
-## 🧠 Pro Tip
-
-You can wrap this into CI tests or automate secret validation across environments!
