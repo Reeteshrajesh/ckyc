@@ -1,155 +1,144 @@
-# 📦 RudderStack Deployment & Operations Guide
-
-This repository contains deployment configurations, setup instructions, and best practices for managing RudderStack (open-source or cloud version) in a DevOps environment.
+Great! Since you're **using localhost with port-forwarding** instead of a real domain, you don’t need Ingress, TLS, or DNS setup. Let’s simplify everything for local development.
 
 ---
 
-## 🔍 Overview
+# 🧪 RudderStack Local CDP Setup (Using Port Forward & Amplitude)
 
-[RudderStack](https://www.rudderstack.com) is an open-source Customer Data Platform (CDP) for collecting, transforming, and routing event data to data warehouses and various downstream tools.
+## 🔧 Prerequisites
 
-This README provides:
-- Deployment steps (Docker/Kubernetes)
-- Monitoring and alerting setup
-- Security best practices
-- CI/CD integration tips
+- Kubernetes cluster running locally (e.g., kind, minikube, k3s)
+- Helm installed
+- kubectl access to the cluster
 
 ---
 
-## 🚀 Deployment Options
+## 📥 Step 1: Install RudderStack with Helm (Local Dev)
 
-### 🐳 Docker Compose
-
-> Quick local setup for development/testing.
-
-```bash
-git clone https://github.com/rudderlabs/rudder-server.git
-cd rudder-server
-docker-compose -f docker-compose-postgres.yml up
-```
-
-### ☸️ Kubernetes (Helm)
-
-> Recommended for production environments.
+### 1.1 Add Helm Repo
 
 ```bash
 helm repo add rudderstack https://rudderstack.github.io/helm-charts
 helm repo update
-
-helm install rudderstack rudderstack/rudderstack \
-  --namespace rudderstack \
-  --create-namespace \
-  -f values.yaml
 ```
 
-📄 Example `values.yaml`:
+### 1.2 Create `rudder-local-values.yaml`
+
 ```yaml
-replicaCount: 2
+replicaCount: 1
+
 ingress:
-  enabled: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-  hosts:
-    - host: rudder.yourdomain.com
-      paths: ["/"]
-  tls:
-    - hosts: ["rudder.yourdomain.com"]
-      secretName: rudderstack-tls
+  enabled: false
+
 env:
   - name: LOG_LEVEL
     value: "debug"
+
+postgres:
+  enabled: true
+  postgresqlPassword: rudderpass
+  persistence:
+    enabled: true
+    size: 2Gi
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 300m
+    memory: 512Mi
 ```
 
 ---
 
-## ⚙️ Configuration
+### 1.3 Install RudderStack
 
-- Control Plane: UI + config manager
-- Data Plane: Handles event ingestion, transformation, and delivery
-
-### Sources
-- Web (JavaScript SDK)
-- Mobile (Android/iOS SDK)
-- Server (Node, Python, Go)
-
-### Destinations
-- Google Analytics, Mixpanel, Snowflake, BigQuery, Redshift, Amplitude, etc.
-
-Configuration is done via:
-- RudderStack UI (Cloud)
-- `config.yaml` (Open Source)
-
----
-
-## 📈 Monitoring
-
-### Prometheus + Grafana
-
-- Expose metrics via `/metrics`
-- Track:
-  - Incoming event rate
-  - Failed delivery count
-  - Queue length
-  - CPU/memory usage
-
-### Logging
-
-- Export to ELK stack, Fluentd, or CloudWatch
-- Look for:
-  - Event processing failures
-  - Transformation errors
-  - Destination errors
-
----
-
-## 🔐 Security
-
-- Use HTTPS for all data ingestion endpoints
-- Protect Control Plane UI with auth (OIDC/SAML or reverse proxy)
-- Encrypt secrets with Kubernetes Secrets or HashiCorp Vault
-- Role-based access control (RBAC) where possible
-
----
-
-## 🔁 CI/CD & Automation
-
-- Use GitOps (e.g. ArgoCD or FluxCD) for Helm-based config changes
-- Monitor SDK version rollout
-- Automate alerts and dashboards provisioning
-
----
-
-## 🧹 Maintenance Tasks
-
-- Rotate secrets and credentials regularly
-- Prune old logs or events
-- Update SDKs and RudderStack server regularly
-- Verify data integrity in destinations
-
----
-
-## 📚 Resources
-
-- [Official Docs](https://www.rudderstack.com/docs/)
-- [GitHub Repo](https://github.com/rudderlabs/rudder-server)
-- [Helm Charts](https://github.com/rudderlabs/helm-charts)
-- [RudderStack Cloud](https://app.rudderstack.com)
-
----
-
-## 🤝 Contributors
-
-- DevOps: Infra & CI/CD
-- Data Engineering: Transformations, schema mapping
-- Backend: SDK instrumentation
-
----
-
-## 📄 License
-
-MIT / RudderStack OSS License
+```bash
+helm install rudderstack rudderstack/rudderstack \
+  --namespace rudderstack \
+  --create-namespace \
+  -f rudder-local-values.yaml
 ```
 
 ---
 
-Let me know if you want to tweak this for a specific cloud provider (AWS/GCP/Azure) or add things like GitHub Actions or Terraform automation!
+## 🚪 Step 2: Port Forward to Access the UI
+
+```bash
+kubectl port-forward svc/rudderstack-data-plane 8080:80 -n rudderstack
+```
+
+Now open [http://localhost:8080](http://localhost:8080) in your browser.
+
+---
+
+## 🟢 Step 3: Create a Source
+
+1. In the RudderStack dashboard → click **Sources** → **Add Source**
+2. Choose **JavaScript**
+3. Name it e.g., `Local Web App`
+4. Copy the **WRITE KEY**
+
+---
+
+## 🧑‍💻 Step 4: Add SDK to Your Web App
+
+Add this to your local frontend:
+
+```html
+<script src="https://cdn.rudderlabs.com/v1.1/rudder-analytics.min.js"></script>
+<script>
+  rudderanalytics.load("YOUR_WRITE_KEY", "http://localhost:8080");
+
+  rudderanalytics.identify("user123", {
+    email: "user@example.com",
+    name: "Test User"
+  });
+
+  rudderanalytics.track("Button Clicked", {
+    label: "Get Started"
+  });
+</script>
+```
+
+✅ Make sure `WRITE_KEY` matches the one from your source.
+
+---
+
+## 🎯 Step 5: Add Amplitude as a Destination
+
+1. Go to **Destinations** → **Add Destination**
+2. Choose **Amplitude**
+3. Paste your **Amplitude API Key**
+4. Link it to your source (`Local Web App`)
+5. Enable it
+
+---
+
+## ✅ Test It All
+
+- Open your local frontend page
+- Trigger the event (`Button Clicked`)
+- Go to **Live Events** in RudderStack to verify
+- Confirm it appears in Amplitude
+
+---
+
+## 🧹 Summary
+
+| Task                    | Status |
+|-------------------------|--------|
+| Helm install (local)    | ✅     |
+| Port forward setup      | ✅     |
+| Source & SDK configured | ✅     |
+| Amplitude hooked up     | ✅     |
+| Events flowing          | ✅     |
+
+---
+
+Need help writing a test HTML page or checking Amplitude event status? I got you!
