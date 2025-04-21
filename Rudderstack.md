@@ -1,7 +1,3 @@
-Great! Since you're **using localhost with port-forwarding** instead of a real domain, you don’t need Ingress, TLS, or DNS setup. Let’s simplify everything for local development.
-
----
-
 # 🧪 RudderStack Local CDP Setup (Using Port Forward & Amplitude)
 
 ## 🔧 Prerequisites
@@ -138,7 +134,3 @@ Add this to your local frontend:
 | Source & SDK configured | ✅     |
 | Amplitude hooked up     | ✅     |
 | Events flowing          | ✅     |
-
----
-
-Need help writing a test HTML page or checking Amplitude event status? I got you!
