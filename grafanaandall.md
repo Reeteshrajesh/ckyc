@@ -26,6 +26,7 @@ This document provides a complete guide to setting up **monitoring and logging**
 - Collects logs from nodes/pods
 - Sends to Loki
 
+### 5. - **Tempo** (distributed tracing)
 ---
 
 ## 🚀 Overview
@@ -36,6 +37,7 @@ This document provides a complete guide to setting up **monitoring and logging**
 | Grafana        | Dashboards and alerts                |
 | Grafana Alloy  | Log collection from nodes/pods       |
 | Loki           | Log aggregation + S3 storage backend |
+| Tempo          | Traces collection and querying       |
 | S3             | Long-term log storage                |
 
 ---
@@ -152,6 +154,25 @@ data:
         url = "http://loki.logging.svc.cluster.local:3100/loki/api/v1/push"
       }
     }
+
+    otelcol.receiver.otlp "otlp_grpc" {
+      protocols = ["grpc"]
+    }
+
+    otelcol.processor.batch "batch" {}
+
+    otelcol.exporter.otlp "tempo" {
+      client {
+        endpoint = "tempo.tempo.svc.cluster.local:4317"
+        tls { insecure = true }
+      }
+    }
+
+    otelcol.service "tracing" {
+      pipelines {
+        traces = [otelcol.receiver.otlp.otlp_grpc, otelcol.processor.batch.batch, otelcol.exporter.otlp.tempo]
+      }
+    }
 ```
 
 Apply:
@@ -168,6 +189,13 @@ helm install grafana-alloy grafana/grafana-agent \
   --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=arn:aws:iam::<ACCOUNT_ID>:role/grafana-alloy-irsa-role
 ```
 
+### 5. Install Tempo (Tracing Backend)
+
+```bash
+helm install tempo grafana/tempo \
+  --namespace tempo --create-namespace
+```
+
 ---
 
 ### 5. Add Loki to Grafana
@@ -176,7 +204,10 @@ helm install grafana-alloy grafana/grafana-agent \
 helm upgrade --reuse-values monitoring prometheus-community/kube-prometheus-stack \
   --set grafana.additionalDataSources[0].name=Loki \
   --set grafana.additionalDataSources[0].type=loki \
-  --set grafana.additionalDataSources[0].url=http://loki.logging.svc.cluster.local:3100
+  --set grafana.additionalDataSources[0].url=http://loki.logging.svc.cluster.local:3100 \
+  --set grafana.additionalDataSources[1].name=Tempo \
+  --set grafana.additionalDataSources[1].type=tempo \
+  --set grafana.additionalDataSources[1].url=tempo.tempo.svc.cluster.local:3200
 ```
 
 ---
@@ -225,6 +256,13 @@ Login at `http://localhost:3000` (default: admin/prom-operator)
 - Select **Loki**
 - Run query: `{namespace="default"}`
 
+### Traces
+
+Use **Explore > Tempo**, then trace by attributes like:
+```sql
+service.name = "my-app"
+```
+
 ### S3 Bucket
 
 Check for `index_` and `chunks` in your bucket to verify logs are pushed.
@@ -242,9 +280,11 @@ Check for `index_` and `chunks` in your bucket to verify logs are pushed.
 
 ## 🔗 References
 
-- [Grafana Alloy](https://grafana.com/docs/alloy/latest/)
+- [Grafana Alloy Docs](https://grafana.com/docs/alloy/latest/)
+- [Grafana Tempo](https://grafana.com/docs/tempo/latest/)
 - [Loki Helm Chart](https://github.com/grafana/helm-charts/tree/main/charts/loki)
-- [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)
+- [Tempo Helm Chart](https://github.com/grafana/helm-charts/tree/main/charts/tempo)
+- [Prometheus Stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)
 
 ---
 
