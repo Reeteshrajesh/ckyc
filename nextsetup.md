@@ -185,7 +185,7 @@ loki:
     create: true
     name: loki
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::<your-account-id>:role/eksctl-<your-cluster-name>-loki-irsa-role
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/eksctl-mycluster-loki-irsa-role
 
   limits_config:
     retention_period: 168h
@@ -234,16 +234,13 @@ loki:
     retention_enabled: true
     compaction_interval: 5m
     retention_delete_delay: 2h
-    retention_retention_period: 168h
-    persistence:
-      enabled: true
-      size: 10Gi
-      storageClassName: gp2
+    retention_period: 168h
 
   persistence:
     enabled: true
     size: 10Gi
     storageClassName: gp2
+
 ```
 
 ---
