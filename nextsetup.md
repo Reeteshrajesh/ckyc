@@ -185,18 +185,25 @@ loki:
     create: true
     name: loki
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/eksctl-mycluster-loki-irsa-role
+      eks.amazonaws.com/role-arn: arn:aws:iam::<your-account-id>:role/eksctl-<your-cluster-name>-loki-irsa-role
 
   limits_config:
     retention_period: 168h
     max_chunk_age: 1m
 
-  commonConfig:
+  common:
     replication_factor: 1
+    compactor_address: http://{{ include "loki.compactorFullname" . }}:3100
+    storage:
+      s3:
+        endpoint: s3.ap-south-1.amazonaws.com
+        region: ap-south-1
+        bucketnames: liquide-loki-logs-bucket
+        insecure: false
 
   schemaConfig:
     configs:
-      - from: 2023-01-01
+      - from: "2023-01-01"
         store: boltdb-shipper
         object_store: s3
         schema: v12
@@ -204,15 +211,14 @@ loki:
           prefix: index_
           period: 24h
 
-  storage_config:
+  storageConfig:
     boltdb_shipper:
+      shared_store: s3
+      cache_ttl: 1h
       active_index_directory: /data/loki/index
       cache_location: /data/loki/cache
-      shared_store: s3
-    aws:
-      bucketnames: liquide-loki-logs-bucket
-      region: ap-south-1
-      s3forcepathstyle: false
+    filesystem:
+      directory: /data/loki/chunks
 
   ingester:
     lifecycler:
@@ -240,7 +246,6 @@ loki:
     enabled: true
     size: 10Gi
     storageClassName: gp2
-
 ```
 
 ---
