@@ -1009,5 +1009,28 @@ Never over-provision permissions in the `EC2NodeClass`.
 * Regularly review **CloudWatch billing reports** for unexpected On-Demand usage spikes
 * If you have burst workloads (e.g., morning traffic), pre-warm nodes using **Scheduled Scalers** like [KEDA](https://keda.sh)
 
+------
+-----
+-----
 
+### 🧠 **15 Key Karpenter Terms Explained**
 
+| Term                            | Description                                                                                         |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **NodePool**                    | Defines how Karpenter should provision nodes (includes capacity type, limits, disruption policies). |
+| **EC2NodeClass**                | AWS-specific configuration like AMIs, subnets, SGs, IAM role, used by a NodePool.                   |
+| **capacity-type**               | Determines if nodes should be Spot or On-Demand (`karpenter.sh/capacity-type`).                     |
+| **requirements**                | Rules under `NodePool` specifying hardware, capacity-type, zones, architectures, etc.               |
+| **consolidationPolicy**         | Governs whether Karpenter tries to consolidate underused nodes.                                     |
+| **disruption**                  | Policy set inside `NodePool` to control node replacement, consolidation, and rolling updates.       |
+| **amiSelectorTerms**            | A list of AMI IDs Karpenter is allowed to use. Supports ARM and AMD flexibility.                    |
+| **subnetSelectorTerms**         | Tag-based filters to tell Karpenter which subnets it can use.                                       |
+| **securityGroupSelectorTerms**  | Tag filters that specify what SGs to attach to nodes created.                                       |
+| **provisioner** *(deprecated)*  | Old API in Karpenter v0.x, now replaced by `NodePool` in v1.x.                                      |
+| **Pod Disruption Budget (PDB)** | Kubernetes native object to ensure minimum running pods during disruptions.                         |
+| **taints & tolerations**        | Used to restrict workloads to certain nodes, like On-Demand only for critical apps.                 |
+| **nodeSelector**                | A label-based way to assign workloads to specific types of nodes (e.g., Spot vs On-Demand).         |
+| **interruption-handling**       | Spot interruption management with AWS Node Termination Handler to gracefully drain.                 |
+| **limits.cpu**                  | A cap on total CPU (or memory) that a NodePool is allowed to provision. Helps budget control.       |
+
+---
