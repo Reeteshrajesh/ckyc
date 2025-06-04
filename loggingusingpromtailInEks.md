@@ -1,4 +1,4 @@
-# 📘 Loki + Grafana + Promtail Setup on EKS
+# 📘 Loki + Grafana + Promtail Setup on EKS(production ready)
 
 This README provides a complete step-by-step guide for setting up Loki, Promtail, and Grafana in an Amazon EKS cluster running 30+ services across 10+ namespaces. The logs will be collected using Promtail and stored in an S3 bucket for 6 months, then transitioned to Glacier, and automatically deleted afterward.
 
