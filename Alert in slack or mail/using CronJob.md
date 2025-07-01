@@ -180,4 +180,3 @@ kubectl delete -f rbac.yaml
 ## 📞 Support
 
 Feel free to open an issue or contact your DevOps team if this fails to alert or needs improvements.
-```
