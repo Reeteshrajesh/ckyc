@@ -1,0 +1,95 @@
+replicaCount: 1
+
+image:
+  repository: digiotech/digio-ckyc
+  tag: digio_ckyc_v2
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 1423
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+resources:
+  requests:
+    cpu: "2"
+    memory: "4Gi"
+  limits:
+    cpu: "2"
+    memory: "4Gi"
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+volumes:
+  - name: ckyc-keys
+    secret:
+      secretName: digio-ckyc-keys
+
+volumeMounts:
+  - name: ckyc-keys
+    mountPath: /app/ckyc-keys
+    readOnly: true
+
+affinity: {}
+
+timezone: Asia/Calcutta
+
+digioCkyc:
+  fiCode: "YOUR-FI-CODE"
+  keyAlias: "your-key-alias"
+  keystorePassword: "your-keystore-password"
+  keystorePath: "/app/ckyc-keys/digio_ckyc_key.jks"
+  ckycPublicKeyPath: "/app/ckyc-keys/digio_ckyc_pub.pem"
+  digioEnv: "PROD"
+
+namespace: "default"
+
