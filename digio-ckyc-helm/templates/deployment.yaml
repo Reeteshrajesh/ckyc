@@ -1,1 +1,63 @@
-
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "digio-ckyc-helm.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "digio-ckyc-helm.name" . }}
+    chart: {{ include "digio-ckyc-helm.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "digio-ckyc-helm.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "digio-ckyc-helm.name" . }}
+        release: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "digio-ckyc-helm.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: digio-ckyc
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "{{ .Values.timezone }}"
+          volumeMounts:
+            - name: ckyc-config
+              mountPath: /app/ckyc-properties.yml
+              subPath: ckyc-properties.yml
+            {{- range .Values.volumeMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              readOnly: {{ .readOnly | default true }}
+            {{- end }}
+          readinessProbe: {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe: {{- toYaml .Values.livenessProbe | nindent 12 }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: ckyc-config
+          configMap:
+            name: digio-ckyc-config
+        {{- range .Values.volumes }}
+        - name: {{ .name }}
+          {{- if .secret }}
+          secret:
+            secretName: {{ .secret.secretName }}
+          {{- end }}
+        {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
