@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: digio-ckyc-config
+  namespace: {{ .Values.namespace }}
+data:
+  ckyc-properties.yml: |-
+    fiCode: {{ .Values.digioCkyc.fiCode }}
+    digioEnv: {{ .Values.digioCkyc.digioEnv }}
+    # Add other config values if needed
