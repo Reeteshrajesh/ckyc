@@ -4,7 +4,15 @@ metadata:
   name: digio-ckyc-config
   namespace: {{ .Values.namespace }}
 data:
-  ckyc-properties.yml: |-
-    fiCode: {{ .Values.digioCkyc.fiCode }}
-    digioEnv: {{ .Values.digioCkyc.digioEnv }}
+  ckyc-properties.yml: |
+    ckyc-config:
+      fi-code: {{ .Values.digioCkyc.fiCode }}
+      ckyc-public-key: {{ .Values.digioCkyc.ckycPublicKeyPath }}
+      digio-env: {{ .Values.digioCkyc.digioEnv }}
+      keystore:
+        keystore-configuration:
+          key-alias: {{ .Values.digioCkyc.keyAlias }}
+          keystore-password: {{ .Values.digioCkyc.keystorePassword }}
+          keystore-path: {{ .Values.digioCkyc.keystorePath }}
+          signature-method: http://www.w3.org/2000/09/xmldsig#rsa-sha1
     # Add other config values if needed
