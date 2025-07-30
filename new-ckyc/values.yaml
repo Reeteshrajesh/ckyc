@@ -91,5 +91,5 @@ digioCkyc:
   ckycPublicKeyPath: "/app/ckyc-keys/digio_ckyc_pub.pem"
   digioEnv: "PROD"
 
-namespace: "default"
+# namespace: "default"
 
