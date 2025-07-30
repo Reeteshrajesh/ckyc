@@ -1,12 +1,12 @@
-#Persistent volume claim for /app/ckyc-keys
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: digio-ckyc-pvc
-  namespace: {{ .Values.namespace }}
-spec:
-  accessModes:
-    - ReadOnlyMany
-  resources:
-    requests:
-      storage: 1Mi
+# #Persistent volume claim for /app/ckyc-keys
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: digio-ckyc-pvc
+#   namespace: {{ .Values.namespace }}
+# spec:
+#   accessModes:
+#     - ReadOnlyMany
+#   resources:
+#     requests:
+#       storage: 1Mi
