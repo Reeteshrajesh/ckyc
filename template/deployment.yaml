@@ -24,12 +24,22 @@ spec:
             - containerPort: {{ .Values.service.port }}
               name: http
           volumeMounts:
-            - name: ckyc-keys
-              mountPath: /app/ckyc-keys
+            - name: config-volume
+              mountPath: /app/config/
+              readOnly: true
+            - name: secret-volume
+              mountPath: /app/ckyc-keys/
               readOnly: true
           livenessProbe: {{ toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe: {{ toYaml .Values.readinessProbe | nindent 12 }}
       volumes:
-        - name: ckyc-keys
+        - name: config-volume
+          configMap:
+            name: digio-ckyc-config
+            items:
+              - key: ckyc-properties.yml
+                path: ckyc-properties.yml
+
+        - name: secret-volume
           secret:
-            secretName: digio-ckyc-keys
+            secretName: digio-ckyc-secret
