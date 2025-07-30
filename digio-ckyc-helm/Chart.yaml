@@ -1,1 +1,17 @@
-
+apiVersion: v2
+name: digio-ckyc-helm
+description: A Helm chart to deploy Digio CKYC Integration Service in Kubernetes
+type: application
+version: 1.0.0
+appVersion: "v2"
+keywords:
+  - digio
+  - ckyc
+  - integration
+  - helm
+  - kubernetes
+maintainers:
+  - name: Your Name
+    email: your.email@example.com
+sources:
+  - https://github.com/your-org/digio-ckyc-helm
