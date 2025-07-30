@@ -54,17 +54,17 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80
 
-nodeSelector:
-  environment: ckyc
-  resource_type: ckyc_util
+# nodeSelector:
+#   environment: ckyc
+#   resource_type: ckyc_util
 
-tolerations:
-  - key: resource_type
-    value: ckyc_util
-    effect: NoExecute
-  - key: resource_type
-    value: ckyc_util
-    effect: NoSchedule
+# tolerations:
+#   - key: resource_type
+#     value: ckyc_util
+#     effect: NoExecute
+#   - key: resource_type
+#     value: ckyc_util
+#     effect: NoSchedule
 
 affinity: {}
 
