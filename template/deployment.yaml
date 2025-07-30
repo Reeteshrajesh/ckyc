@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "digio-ckyc-helm.fullname" . }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.namespace }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
